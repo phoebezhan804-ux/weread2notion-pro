@@ -1,12 +1,13 @@
 name: read time sync
-
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */3 * * *"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   sync:
     name: Sync
@@ -35,22 +36,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      
       - name: Remove folder
         run: rm -rf ./OUT_FOLDER
+      
       - name: Set default year if not provided
         run: echo "YEAR=$(date +"%Y")" >> $GITHUB_ENV
         if: env.YEAR == ''
+      
       - name: weread heatmap
         run: |
-         github_heatmap weread --year $YEAR --cookie "$WEREAD_COOKIE" --without-type-name --background-color=${{ vars.background_color||'#FFFFFF'}} --track-color=${{ vars.track_color||'#ACE7AE'}} --special-color1=${{ vars.special_color||'#69C16E'}} --special-color2=${{ vars.special_color2||'#549F57'}} --dom-color=${{ vars.dom_color||'#EBEDF0'}} --text-color=${{ vars.text_color||'#000000'}}
+          github_heatmap weread --year $YEAR --without-type-name --background-color=${{ vars.background_color||'#FFFFFF'}} --track-color=${{ vars.track_color||'#ACE7AE'}} --special-color1=${{ vars.special_color||'#69C16E'}} --special-color2=${{ vars.special_color2||'#549F57'}} --dom-color=${{ vars.dom_color||'#EBEDF0'}} --text-color=${{ vars.text_color||'#000000'}}
+      
       - name: Rename weread.svg to a random name
         run: |
           cd OUT_FOLDER
@@ -59,6 +66,7 @@ jobs:
           RANDOM_FILENAME=$(uuidgen).svg
           mv ./OUT_FOLDER/weread.svg ./OUT_FOLDER/$RANDOM_FILENAME
           echo "Renamed file to $RANDOM_FILENAME"
+      
       - name: push
         run: |
           git config --local user.email "action@github.com"
@@ -66,7 +74,7 @@ jobs:
           git add .
           git commit -m 'add new heatmap' || echo "nothing to commit"
           git push || echo "nothing to push"
+      
       - name: read time sync
         run: |
           read_time
-      
